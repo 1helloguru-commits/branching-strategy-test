@@ -1,0 +1,101 @@
+#%RAML 1.0
+title: Customer API
+description: Sample MuleSoft System API following a standard RAML structure.
+version: v1
+baseUri: https://api.example.com/v1
+mediaType: application/json
+
+types:
+  Customer:
+    type: object
+    properties:
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+      status:
+        type: string
+        enum: [ACTIVE, INACTIVE]
+
+  CustomerRequest:
+    type: object
+    properties:
+      firstName: string
+      lastName: string
+      email: string
+
+traits:
+  pageable:
+    queryParameters:
+      page:
+        type: integer
+        required: false
+        default: 1
+      pageSize:
+        type: integer
+        required: false
+        default: 20
+
+/customers:
+  get:
+    is: [pageable]
+    description: Retrieve customers.
+    responses:
+      200:
+        body:
+          application/json:
+            type: Customer[]
+            example: !include ../examples/customers.json
+      500:
+        body:
+          application/json:
+            example:
+              message: Internal Server Error
+
+  post:
+    description: Create a customer.
+    body:
+      application/json:
+        type: CustomerRequest
+        example: !include ../examples/customer-request.json
+    responses:
+      201:
+        body:
+          application/json:
+            type: Customer
+            example: !include ../examples/customer.json
+      400:
+        body:
+          application/json:
+            example:
+              message: Bad Request
+
+/customers/{customerId}:
+  uriParameters:
+    customerId:
+      type: string
+      description: Unique customer identifier
+
+  get:
+    description: Retrieve a customer by ID.
+    responses:
+      200:
+        body:
+          application/json:
+            type: Customer
+            example: !include ../examples/customer.json
+      404:
+        body:
+          application/json:
+            example:
+              message: Customer not found
+
+  delete:
+    description: Delete a customer.
+    responses:
+      204:
+      404:
+        body:
+          application/json:
+            example:
+              message: Customer not found

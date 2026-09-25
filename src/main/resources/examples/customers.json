@@ -1,0 +1,16 @@
+[
+  {
+    "id": "C10001",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "C10002",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith@example.com",
+    "status": "ACTIVE"
+  }
+]
