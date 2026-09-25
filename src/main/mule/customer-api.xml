@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core
+        http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+        http://www.mulesoft.org/schema/mule/http
+        http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+        http://www.mulesoft.org/schema/mule/mule-apikit
+        http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd">
+
+    <!-- HTTP Listener Configuration -->
+    <http:listener-config
+        name="HTTP_Listener_config"
+        doc:name="HTTP Listener config">
+
+        <http:listener-connection
+            host="0.0.0.0"
+            port="${http.port}" />
+
+    </http:listener-config>
+
+
+    <!-- APIkit Configuration -->
+    <apikit:config
+        name="customer-api-config"
+        api="${api.path}/customer-api.raml"
+        outboundHeadersMapName="outboundHeaders"
+        httpStatusVarName="httpStatus" />
+
+
+    <!-- Main API Flow -->
+    <flow name="customer-api-main">
+
+        <http:listener
+            config-ref="HTTP_Listener_config"
+            path="/api/*"
+            doc:name="API Listener" />
+
+        <apikit:router
+            config-ref="customer-api-config"
+            doc:name="APIkit Router" />
+
+    </flow>
+
+
+    <!-- GET /customers -->
+    <flow name="get:\customers:customer-api-config">
+
+        <set-payload
+            value="#[[
+                {
+                    id: 'C10001',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    email: 'john.doe@example.com',
+                    status: 'ACTIVE'
+                },
+                {
+                    id: 'C10002',
+                    firstName: 'Jane',
+                    lastName: 'Smith',
+                    email: 'jane.smith@example.com',
+                    status: 'ACTIVE'
+                }
+            ]]"
+            doc:name="Set Customers" />
+
+    </flow>
+
+
+    <!-- POST /customers -->
+    <flow name="post:\customers:application\json:customer-api-config">
+
+        <set-variable
+            variableName="customerId"
+            value="#['C' ++ randomInt(99999)]"
+            doc:name="Generate Customer ID" />
+
+        <ee:transform doc:name="Create Customer Response">
+            <ee:message>
+                <ee:set-payload><![CDATA[
+                    %dw 2.0
+                    output application/json
+                    ---
+                    {
+                        id: vars.customerId,
+                        firstName: payload.firstName,
+                        lastName: payload.lastName,
+                        email: payload.email,
+                        status: "ACTIVE"
+                    }
+                ]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+
+    </flow>
+
+
+    <!-- GET /customers/{customerId} -->
+    <flow name="get:\customers\(customerId):customer-api-config">
+
+        <set-payload
+            value="#[{
+                id: attributes.uriParams.customerId,
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'john.doe@example.com',
+                status: 'ACTIVE'
+            }]"
+            doc:name="Set Customer" />
+
+    </flow>
+
+
+    <!-- DELETE /customers/{customerId} -->
+    <flow name="delete:\customers\(customerId):customer-api-config">
+
+        <set-payload
+            value="#[null]"
+            doc:name="Delete Customer" />
+
+        <set-variable
+            variableName="httpStatus"
+            value="204"
+            doc:name="Set HTTP Status" />
+
+    </flow>
+
+</mule>
